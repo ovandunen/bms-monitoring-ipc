@@ -1,5 +1,6 @@
 package com.fleet.shared.bms.ipc.infrastructure
 
+import android.os.IBinder
 import android.os.RemoteCallbackList
 import android.os.RemoteException
 import com.fleet.shared.bms.ipc.IBmsCallback
@@ -21,6 +22,9 @@ import com.fleet.shared.bms.ipc.domain.ConnectionStatus
  * Liskov: consumers bind to [IBmsService]; this type is the canonical server implementation.
  */
 class AidlBatteryServiceAdapter : IBmsService.Stub(), BatteryTelemetryPort {
+
+    /** Return from [android.app.Service.onBind] — this stub is the [IBmsService] binder. */
+    val binder: IBinder get() = this
 
     private val callbacks = RemoteCallbackList<IBmsCallback>()
     private var latestSnapshot: BatterySnapshot? = null
