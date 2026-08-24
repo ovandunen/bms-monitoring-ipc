@@ -1,0 +1,21 @@
+object VehicleLocationMapper {
+    fun toParcelable(domain: VehicleLocation): ParcelableVehicleLocation =
+        ParcelableVehicleLocation(
+            timestamp = domain.timestamp,
+            latitude = domain.latitude,
+            longitude = domain.longitude,
+            altitude = domain.altitude,
+            speed = domain.speed,
+            isMock = domain.isMock
+        )
+    
+    fun toDomain(parcel: ParcelableVehicleLocation): VehicleLocation =
+        VehicleLocation(
+            timestamp = parcel.timestamp,
+            latitude = parcel.latitude,
+            longitude = parcel.longitude,
+            altitude = parcel.altitude,
+            speed = parcel.speed,
+            isMock = parcel.isMock
+        )
+}

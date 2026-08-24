@@ -1,0 +1,7 @@
+interface LocationTelemetryPort {
+    fun publishLocation(location: VehicleLocation)
+}
+
+interface LocationTelemetryListenerPort {
+    fun onLocationChanged(location: VehicleLocation)
+}

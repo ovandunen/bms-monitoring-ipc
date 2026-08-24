@@ -1,0 +1,20 @@
+class AidlBatteryServiceAdapter : IBmsService.Stub(), BatteryTelemetryPort, LocationTelemetryPort { // new interface
+    ...
+    
+    override fun publishLocation(location: VehicleLocation) {
+        latestLocation = location
+        val parcelable = VehicleLocationMapper.toParcelable(location)
+        broadcastLocation(parcelable)
+    }
+
+    override fun getCurrentLocation(): ParcelableVehicleLocation {
+        val location = latestLocation ?: return EMPTY_LOCATION
+        return VehicleLocationMapper.toParcelable(location)
+    }
+    
+    ...
+    
+    private fun broadcastLocation(parcelable: ParcelableVehicleLocation) {
+        // same as before, but with onLocationChanged callback instead of onStateChanged
+    }
+}
