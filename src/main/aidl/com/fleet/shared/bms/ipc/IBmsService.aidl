@@ -3,7 +3,7 @@ package com.fleet.shared.bms.ipc;
 import com.fleet.shared.bms.ipc.ParcelableBatterySnapshot;
 import com.fleet.shared.bms.ipc.ParcelableVehicleLocation; // new import
 
-interface IBmsService  {
+interface IBmsService {
     ParcelableBatterySnapshot getCurrentSnapshot();
     void registerCallback(IBmsCallback callback);
     void unregisterCallback(IBmsCallback callback);
