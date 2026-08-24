@@ -4,7 +4,7 @@ import com.fleet.shared.bms.ipc.IBmsCallback;
 import com.fleet.shared.bms.ipc.ParcelableBatterySnapshot;
 import com.fleet.shared.bms.ipc.ParcelableBmsCommand;
 
-interface IBmsService {
+interface IBmsService  {
     ParcelableBatterySnapshot getCurrentSnapshot();
     void registerCallback(IBmsCallback callback);
     void unregisterCallback(IBmsCallback callback);

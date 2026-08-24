@@ -15,15 +15,15 @@ import com.fleet.shared.bms.ipc.domain.ConnectionStatus
 /**
    * Server-side IPC adapter.
    *
-   * - Single Responsibility: [IBmsService.Stub] IPC threading and callback fan-out only.
-   * - Interface Segregation: implements [BatteryTelemetryPort] (write + command ingress).
-   * - Dependency Inversion: depends on application port contract, maps to domain at boundaries.
+   *  - Single Responsibility: [IBmsService.Stub] IPC threading and callback fan-out only.
+   *  - Interface Segregation: implements [BatteryTelemetryPort] (write + command ingress).
+   *  - Dependency Inversion: depends on application port contract, maps to domain at boundaries.
    *
    * Liskov: consumers bind to [IBmsService]; this type is the canonical server implementation.
    */
-class AidlBatteryServiceAdapter  : IBmsService.Stub(), BatteryTelemetryPort {
+class AidlBatteryServiceAdapter : IBmsService.Stub(), BatteryTelemetryPort {
 
-    /** Return from [android.app.Service.onBind] - this stub is the [IBmsService] binder. */
+    /** Return from [android.app.Service.onBind] - this stub is the [IBmsService] binder.  */
     val binder: IBinder get() = this
 
     private val callbacks = RemoteCallbackList<IBmsCallback>()
