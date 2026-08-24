@@ -7,33 +7,43 @@ import android.content.ServiceConnection
 import android.os.IBinder
 import android.os.RemoteException
 import androidx.core.content.ContextCompat
-import com.fleet.shared.bms.ipc.IBmsCallback
-import com.fleet.shared.bms.ipc.IBmsService
-import com.fleet.shared.bms.ipc.ParcelableBmsCommand
+import com.fleet.shared.bms.ipc.*
 import com.fleet.shared.bms.ipc.application.ports.BatteryQueryPort
 import com.fleet.shared.bms.ipc.domain.BatterySnapshot
-import com.fleet.shared.bms.ipc.domain.BmsCommand
-import com.fleet.shared.bms.ipc.domain.ConnectionStatus
+import com.fleet.shared.bms.ipc.domain.VehicleLocation // new import
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import kotlin.math.min
+// ... rest of the class definition ...
 
-/**
-   * Client-side IPC adapter.
-   *
-   *  - Single Responsibility: Android [ServiceConnection] lifecycle, bind/reconnect, and callback bridge.
-   *  - Liskov Substitution: usable wherever [BatteryQueryPort] is required; flows expose reactive state.
-   *  - Dependency Inversion: maps IPC DTOs to domain via [BatterySnapshotMapper] before exposing to callers.
-   */
-class AidlBatteryClientAdapter(
-    private val context: Context,
-    private val scope: CoroutineScope,
-) : BatteryQueryPort {
+private val _vehicleLocation = MutableStateFlow<VehicleLocation?>(null)
+val vehicleLocation: StateFlow<VehicleLocation?> = _vehicleLocation.asStateFlow()
 
-    // ... rest of code...
+// ... rest of the class definition ...
+
+inner class IBmsCallback : Binder(), IBmsCallback {
+    // ... rest of the inner class definition ...
+    
+    override fun onLocationChanged(location: ParcelableVehicleLocation)  {
+        val domain = VehicleLocationMapper.toDomain(location)
+        _vehicleLocation.value = domain
+    }
+}
+
+private suspend fun refreshSnapshotFromService()  {
+    // ... rest of the method definition ...
+    
+    service?.let {
+        try {
+            val snapshot = it.currentSnapshot
+            _batterySnapshot.value = BatterySnapshotMapper.toDomain(snapshot)
+            
+            // new code to fetch and update location
+            val location = it.currentLocation
+            if (location != null && VehicleLocationMapper.isValid(location))  {
+                _vehicleLocation.value = VehicleLocationMapper.toDomain(location)
+            }
+        } catch (e: RemoteException)  {
+            // handle exception
+        }
+    }
 }
