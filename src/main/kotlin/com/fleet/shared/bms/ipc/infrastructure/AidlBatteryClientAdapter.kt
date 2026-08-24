@@ -10,19 +10,19 @@ import androidx.core.content.ContextCompat
 import com.fleet.shared.bms.ipc.*
 import com.fleet.shared.bms.ipc.application.ports.BatteryQueryPort
 import com.fleet.shared.bms.ipc.domain.BatterySnapshot
-import com.fleet.shared.bms.ipc.domain.VehicleLocation  // new import
+import com.fleet.shared.bms.ipc.domain.VehicleLocation   // new import
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines Job
 // … rest of the class definition …
 
-private val  _vehicleLocation = MutableStateFlow<VehicleLocation?>(null)
+private val _vehicleLocation = MutableStateFlow<VehicleLocation?>(null)
 val vehicleLocation: StateFlow<VehicleLocation?>  = _vehicleLocation.asStateFlow()
 
 // … rest of the class definition …
 
 inner class IBmsCallback : Binder(), IBmsCallback {
-    // … rest of the inner class definition …
-    
+     // … rest of the inner class definition …
+     
     override fun onLocationChanged(location: ParcelableVehicleLocation) {
         val domain = VehicleLocationMapper.toDomain(location)
         _vehicleLocation.value = domain
@@ -30,8 +30,8 @@ inner class IBmsCallback : Binder(), IBmsCallback {
 }
 
 private suspend fun refreshSnapshotFromService() {
-    // … rest of the method definition …
-    
+     // … rest of the method definition …
+     
     service?.let {
         try {
             val snapshot = it.currentSnapshot
@@ -42,8 +42,8 @@ private suspend fun refreshSnapshotFromService() {
             if (location != null && VehicleLocationMapper.isValid(location)) {
                 _vehicleLocation.value = VehicleLocationMapper.toDomain(location)
             }
-        } catch (e: RemoteException) {
-            // handle exception
-        }
-    }
+        } catch (e: RemoteException)  {
+             // handle exception
+         }
+     }
 }
