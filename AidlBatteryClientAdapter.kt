@@ -9,6 +9,7 @@ import android.os.RemoteException
 import androidx.core.content.ContextCompat
 import com.fleet.shared.bms.ipc.IBmsCallback
 import com.fleet.shared.bms.ipc.IBmsService
+import com.fleet.shared.bms.ipc.ParcelableBmsCommand
 import com.fleet.shared.bms.ipc.application.ports.BatteryQueryPort
 import com.fleet.shared.bms.ipc.domain.BatterySnapshot
 import com.fleet.shared.bms.ipc.domain.BmsCommand
@@ -100,7 +101,7 @@ class AidlBatteryClientAdapter(
             component = ComponentName(BMS_SERVICE_PACKAGE, BMS_SERVICE_CLASS)
         }
         isBound = ContextCompat.getSystemService(context, Context::class.java) != null &&
-                context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+            context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
         if (!isBound) {
             _connectionStatus.value = ConnectionStatus.Error("bindService failed")
             scheduleReconnect()
