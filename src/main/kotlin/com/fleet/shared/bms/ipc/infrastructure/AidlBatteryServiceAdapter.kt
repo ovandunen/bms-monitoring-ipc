@@ -8,7 +8,7 @@ import com.fleet.shared.bms.ipc.application.ports.BatteryTelemetryPort
 import com.fleet.shared.bms.ipc.domain.BatterySnapshot
 import com.fleet.shared.bms.ipc.domain.BmsCommand
 import com.fleet.shared.bms.ipc.domain.ConnectionStatus
-import com.fleet.shared.bms.ipc.domain.VehicleLocation   // new import
+import com.fleet.shared.bms.ipc.domain.VehicleLocation    // new import
 
 // … rest of the class definition …
 
