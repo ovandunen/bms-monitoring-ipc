@@ -1,21 +1,21 @@
 plugins {
-    id("com.android.library") version "8.8.2"
-    id("org.jetbrains.kotlin.android") version "2.1.21"
-    id("org.jetbrains.kotlin.plugin.parcelize") version "2.1.21"
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+    id("org.jetbrains.kotlin.plugin.parcelize")
     id("maven-publish")
+}
+
+kotlin {
+    jvmToolchain(17)
 }
 
 android {
     namespace = "com.fleet.shared.bms.ipc"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 26
         consumerProguardFiles("consumer-rules.pro")
-    }
-
-    buildFeatures {
-        aidl = true
     }
 
     compileOptions {
@@ -23,9 +23,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
+    buildFeatures {
+        aidl = true
     }
+
 
     publishing {
         singleVariant("release") {
@@ -36,19 +37,36 @@ android {
 
 dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation(kotlin("test"))
+    testImplementation("io.mockk:mockk:1.13.13")
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("androidx.test:core:1.6.1")
 }
 
-afterEvaluate {
-    publishing {
-        publications {
-            register<MavenPublication>("release") {
-                groupId = "com.fleet.shared"
-                artifactId = "bms-monitoring-ipc"
-                version = "1.0.0-SNAPSHOT"
+val integrationContract = rootProject.file("../bms-monitoring-app/integration-test.contract.properties")
+tasks.withType<Test>().configureEach {
+    if (integrationContract.exists()) {
+        systemProperty("integration.contract.file", integrationContract.absolutePath)
+    }
+}
 
+publishing {
+    publications {
+        create<MavenPublication>("release") {
+            groupId = "com.fleet.shared"
+            artifactId = "bms-monitoring-ipc"
+            version = "1.0.0-SNAPSHOT"
+            afterEvaluate {
                 from(components["release"])
             }
+        }
+    }
+    repositories {
+        maven {
+            url = uri("${System.getProperty("user.home")}/.m2/repository")
         }
     }
 }
