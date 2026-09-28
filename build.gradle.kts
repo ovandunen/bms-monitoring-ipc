@@ -1,9 +1,12 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    id("org.jetbrains.kotlin.plugin.parcelize")
+    alias(libs.plugins.kotlin.parcelize)
     id("maven-publish")
 }
+
+group = "com.fleet.shared"
+version = "1.1.0-SNAPSHOT"
 
 kotlin {
     jvmToolchain(17)
