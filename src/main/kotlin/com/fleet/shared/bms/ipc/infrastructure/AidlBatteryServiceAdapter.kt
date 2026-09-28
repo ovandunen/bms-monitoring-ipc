@@ -3,6 +3,7 @@ package com.fleet.shared.bms.ipc.infrastructure
 import android.os.IBinder
 import android.os.RemoteCallbackList
 import android.os.RemoteException
+import android.util.Log
 import com.fleet.shared.bms.ipc.IBmsCallback
 import com.fleet.shared.bms.ipc.IBmsService
 import com.fleet.shared.bms.ipc.ParcelableBatterySnapshot
@@ -35,6 +36,11 @@ class AidlBatteryServiceAdapter : IBmsService.Stub(), BatteryTelemetryPort {
     private var latestSnapshot: BatterySnapshot? = null
     private var latestLocation: VehicleLocation? = null
     private var commandHandler: ((BmsCommand) -> Unit)? = null
+    private var tripResetHandler: (() -> Unit)? = null
+
+    fun registerTripResetHandler(handler: () -> Unit) {
+        tripResetHandler = handler
+    }
 
     override fun publishState(snapshot: BatterySnapshot) {
         latestSnapshot = snapshot
@@ -97,7 +103,13 @@ class AidlBatteryServiceAdapter : IBmsService.Stub(), BatteryTelemetryPort {
         commandHandler?.invoke(domain)
     }
 
+    override fun resetTrip() {
+        Log.i(TAG, "BmsMonitorService: resetTrip() called via AIDL")
+        tripResetHandler?.invoke()
+    }
+
     companion object {
+        private const val TAG = "BmsMonitor"
         private val EMPTY_SNAPSHOT =
             ParcelableBatterySnapshot(
                 timestamp = 0L,

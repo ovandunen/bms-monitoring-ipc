@@ -12,5 +12,7 @@ interface IBmsService {
     void sendCommand(in ParcelableBmsCommand command);
     
     // new method
-    ParcelableVehicleLocation getCurrentLocation(); 
+    ParcelableVehicleLocation getCurrentLocation();
+
+    void resetTrip();
 }
