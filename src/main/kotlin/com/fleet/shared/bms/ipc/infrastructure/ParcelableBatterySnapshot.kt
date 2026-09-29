@@ -28,4 +28,7 @@ data class ParcelableBatterySnapshot(
     val tripDistanceKm: Float = 0f,
     val co2SavingKg: Float = 0f,
     val batteryTempAvg: Float = 0f,
+    val vehicleStatus: Int = 0,
+    val batteryDataStale: Boolean = false,
+    val cloudConnected: Boolean = false,
 ) : Parcelable

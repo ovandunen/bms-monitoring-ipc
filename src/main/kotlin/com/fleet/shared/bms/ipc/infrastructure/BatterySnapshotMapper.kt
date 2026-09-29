@@ -31,6 +31,9 @@ object BatterySnapshotMapper {
             tripDistanceKm = domain.tripDistanceKm,
             co2SavingKg = domain.co2SavingKg,
             batteryTempAvg = domain.batteryTempAvg,
+            vehicleStatus = domain.vehicleStatus,
+            batteryDataStale = domain.batteryDataStale,
+            cloudConnected = domain.cloudConnected,
         )
 
     fun toDomain(parcel: ParcelableBatterySnapshot): BatterySnapshot =
@@ -52,6 +55,9 @@ object BatterySnapshotMapper {
             tripDistanceKm = parcel.tripDistanceKm,
             co2SavingKg = parcel.co2SavingKg,
             batteryTempAvg = parcel.batteryTempAvg,
+            vehicleStatus = parcel.vehicleStatus,
+            batteryDataStale = parcel.batteryDataStale,
+            cloudConnected = parcel.cloudConnected,
         )
 }
 

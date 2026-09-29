@@ -6,9 +6,12 @@ import android.os.RemoteException
 import android.util.Log
 import com.fleet.shared.bms.ipc.IBmsCallback
 import com.fleet.shared.bms.ipc.IBmsService
+import com.fleet.shared.bms.ipc.IpcContract
 import com.fleet.shared.bms.ipc.ParcelableBatterySnapshot
 import com.fleet.shared.bms.ipc.ParcelableBmsCommand
+import com.fleet.shared.bms.ipc.ParcelableTripSession
 import com.fleet.shared.bms.ipc.ParcelableVehicleLocation
+import com.fleet.shared.bms.ipc.domain.TripSession
 import com.fleet.shared.bms.ipc.application.ports.BatteryTelemetryPort
 import com.fleet.shared.bms.ipc.domain.BatterySnapshot
 import com.fleet.shared.bms.ipc.domain.BmsCommand
@@ -37,9 +40,14 @@ class AidlBatteryServiceAdapter : IBmsService.Stub(), BatteryTelemetryPort {
     private var latestLocation: VehicleLocation? = null
     private var commandHandler: ((BmsCommand) -> Unit)? = null
     private var tripResetHandler: (() -> Unit)? = null
+    private var tripSessionsQuery: ((Int) -> List<TripSession>)? = null
 
     fun registerTripResetHandler(handler: () -> Unit) {
         tripResetHandler = handler
+    }
+
+    fun registerTripSessionsQuery(query: (Int) -> List<TripSession>) {
+        tripSessionsQuery = query
     }
 
     override fun publishState(snapshot: BatterySnapshot) {
@@ -107,6 +115,13 @@ class AidlBatteryServiceAdapter : IBmsService.Stub(), BatteryTelemetryPort {
         Log.i(TAG, "BmsMonitorService: resetTrip() called via AIDL")
         tripResetHandler?.invoke()
     }
+
+    override fun getTripSessions(limit: Int): List<ParcelableTripSession> {
+        val capped = limit.coerceIn(0, 100)
+        return tripSessionsQuery?.invoke(capped).orEmpty().map(TripSessionMapper::toParcelable)
+    }
+
+    override fun getIpcVersion(): Int = IpcContract.IPC_VERSION
 
     companion object {
         private const val TAG = "BmsMonitor"

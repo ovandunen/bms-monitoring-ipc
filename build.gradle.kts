@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.fleet.shared"
-version = "1.1.0-SNAPSHOT"
+version = "1.2.0-SNAPSHOT"
 
 kotlin {
     jvmToolchain(17)
@@ -68,7 +68,7 @@ publishing {
         create<MavenPublication>("release") {
             groupId = "com.fleet.shared"
             artifactId = "bms-monitoring-ipc"
-            version = "1.1.0-SNAPSHOT"
+            version = "1.2.0-SNAPSHOT"
             afterEvaluate {
                 from(components["release"])
             }

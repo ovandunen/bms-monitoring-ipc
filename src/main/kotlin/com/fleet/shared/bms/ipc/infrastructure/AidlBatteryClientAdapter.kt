@@ -9,6 +9,8 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import com.fleet.shared.bms.ipc.IBmsCallback
 import com.fleet.shared.bms.ipc.IBmsService
+import com.fleet.shared.bms.ipc.IpcContract
+import com.fleet.shared.bms.ipc.domain.TripSession
 import com.fleet.shared.bms.ipc.application.IpcSnapshotAuditFormatter
 import com.fleet.shared.bms.ipc.application.ports.BatteryQueryPort
 import com.fleet.shared.bms.ipc.domain.BatterySnapshot
@@ -46,6 +48,9 @@ class AidlBatteryClientAdapter(
     private val _connectionStatus = MutableStateFlow<ConnectionStatus>(ConnectionStatus.Disconnected)
     val connectionStatus: StateFlow<ConnectionStatus> = _connectionStatus.asStateFlow()
 
+    private val _tripSessions = MutableStateFlow<List<TripSession>>(emptyList())
+    val tripSessions: StateFlow<List<TripSession>> = _tripSessions.asStateFlow()
+
     @Volatile
     private var service: IBmsService? = null
 
@@ -67,9 +72,13 @@ class AidlBatteryClientAdapter(
                 if (!registerCallback()) {
                     return
                 }
+                if (!checkIpcVersion()) {
+                    return
+                }
                 _connectionStatus.value = ConnectionStatus.Connected
                 refreshSnapshotFromService()
                 refreshLocationFromService()
+                refreshTripSessions()
             }
 
             override fun onServiceDisconnected(name: ComponentName?) {
@@ -146,9 +155,15 @@ class AidlBatteryClientAdapter(
         try {
             service?.resetTrip()
                 ?: Log.w(TAG, "AidlBatteryClient: resetTrip() called but service not bound")
+            refreshTripSessions()
         } catch (e: Exception) {
             onFamilyAIpcFailed("resetTrip", e)
         }
+    }
+
+    fun getTripSessions(limit: Int): List<TripSession> {
+        refreshTripSessions(limit)
+        return _tripSessions.value
     }
 
     override fun getCurrentSnapshot(): BatterySnapshot? = _batteryState.value
@@ -215,6 +230,30 @@ class AidlBatteryClientAdapter(
             _vehicleLocation.value = VehicleLocationMapper.toDomain(parcel)
         } catch (e: Exception) {
             onFamilyAIpcFailed("getCurrentLocation", e)
+        }
+    }
+
+    private fun checkIpcVersion(): Boolean {
+        return try {
+            val remote = service ?: return false
+            if (remote.ipcVersion != IpcContract.IPC_VERSION) {
+                _batteryState.value = null
+                _connectionStatus.value = ConnectionStatus.Error(IpcContract.VERSION_MISMATCH_REASON)
+                return false
+            }
+            true
+        } catch (e: Exception) {
+            onFamilyAIpcFailed("getIpcVersion", e)
+            false
+        }
+    }
+
+    private fun refreshTripSessions(limit: Int = 50) {
+        try {
+            val parcels = service?.getTripSessions(limit) ?: return
+            _tripSessions.value = parcels.map(TripSessionMapper::toDomain)
+        } catch (e: Exception) {
+            onFamilyAIpcFailed("getTripSessions", e)
         }
     }
 

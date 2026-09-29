@@ -1,5 +1,6 @@
 package com.fleet.shared.bms.ipc.infrastructure
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,5 +32,13 @@ class AidlBatteryServiceAdapterResetTripTest {
         adapter.resetTrip()
 
         assertTrue(invoked == 2)
+    }
+
+    @Test
+    fun getIpcVersion_returnsLibraryConstant() {
+        assertEquals(
+            com.fleet.shared.bms.ipc.IpcContract.IPC_VERSION,
+            AidlBatteryServiceAdapter().ipcVersion,
+        )
     }
 }
