@@ -1,9 +1,12 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    id("org.jetbrains.kotlin.plugin.parcelize")
+    alias(libs.plugins.kotlin.parcelize)
     id("maven-publish")
 }
+
+group = "com.fleet.shared"
+version = "1.2.0-SNAPSHOT"
 
 kotlin {
     jvmToolchain(17)
@@ -25,6 +28,13 @@ android {
 
     buildFeatures {
         aidl = true
+    }
+
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+            isIncludeAndroidResources = true
+        }
     }
 
 
@@ -58,7 +68,7 @@ publishing {
         create<MavenPublication>("release") {
             groupId = "com.fleet.shared"
             artifactId = "bms-monitoring-ipc"
-            version = "1.0.0-SNAPSHOT"
+            version = "1.2.0-SNAPSHOT"
             afterEvaluate {
                 from(components["release"])
             }

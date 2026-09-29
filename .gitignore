@@ -16,5 +16,4 @@ bin/
 gen/
 out/
 release/
-gradle/
 .aider*

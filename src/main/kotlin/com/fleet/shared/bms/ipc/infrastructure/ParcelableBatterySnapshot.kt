@@ -24,4 +24,11 @@ data class ParcelableBatterySnapshot(
     val motorRpm: Int,
     val vehicleSpeed: Float,
     val faultCodes: List<String> = emptyList(),
+    val estimatedRangeKm: Float = 0f,
+    val tripDistanceKm: Float = 0f,
+    val co2SavingKg: Float = 0f,
+    val batteryTempAvg: Float = 0f,
+    val vehicleStatus: Int = 0,
+    val batteryDataStale: Boolean = false,
+    val cloudConnected: Boolean = false,
 ) : Parcelable
