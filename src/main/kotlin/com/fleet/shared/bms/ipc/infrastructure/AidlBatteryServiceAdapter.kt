@@ -2,7 +2,6 @@ package com.fleet.shared.bms.ipc.infrastructure
 
 import android.os.IBinder
 import android.os.RemoteCallbackList
-import android.os.RemoteException
 import android.util.Log
 import com.fleet.shared.bms.ipc.IBmsCallback
 import com.fleet.shared.bms.ipc.IBmsService
@@ -36,6 +35,7 @@ class AidlBatteryServiceAdapter : IBmsService.Stub(), BatteryTelemetryPort {
     val binder: IBinder get() = this
 
     private val callbacks = RemoteCallbackList<IBmsCallback>()
+    private val broadcastLock = Any()
     private var latestSnapshot: BatterySnapshot? = null
     private var latestLocation: VehicleLocation? = null
     private var commandHandler: ((BmsCommand) -> Unit)? = null
@@ -69,18 +69,7 @@ class AidlBatteryServiceAdapter : IBmsService.Stub(), BatteryTelemetryPort {
 
     fun publishConnectionStatus(status: ConnectionStatus) {
         val code = ConnectionStatusMapper.toStatusCode(status)
-        val count = callbacks.beginBroadcast()
-        try {
-            for (i in 0 until count) {
-                try {
-                    callbacks.getBroadcastItem(i).onConnectionStatusChanged(code)
-                } catch (e: RemoteException) {
-                    // Client died; RemoteCallbackList will prune on next broadcast.
-                }
-            }
-        } finally {
-            callbacks.finishBroadcast()
-        }
+        forEachCallback { it.onConnectionStatusChanged(code) }
     }
 
     override fun getCurrentSnapshot(): ParcelableBatterySnapshot {
@@ -162,32 +151,32 @@ class AidlBatteryServiceAdapter : IBmsService.Stub(), BatteryTelemetryPort {
     }
 
     private fun broadcastState(parcelable: ParcelableBatterySnapshot) {
-        val count = callbacks.beginBroadcast()
-        try {
-            for (i in 0 until count) {
-                try {
-                    callbacks.getBroadcastItem(i).onStateChanged(parcelable)
-                } catch (e: RemoteException) {
-                    // Client process gone; ignore per callback.
-                }
-            }
-        } finally {
-            callbacks.finishBroadcast()
-        }
+        forEachCallback { it.onStateChanged(parcelable) }
     }
 
     private fun broadcastLocation(parcelable: ParcelableVehicleLocation) {
-        val count = callbacks.beginBroadcast()
-        try {
-            for (i in 0 until count) {
-                try {
-                    callbacks.getBroadcastItem(i).onLocationChanged(parcelable)
-                } catch (e: RemoteException) {
-                    // Client process gone; ignore per callback.
+        forEachCallback { it.onLocationChanged(parcelable) }
+    }
+
+    /**
+     * [RemoteCallbackList.beginBroadcast] throws [IllegalStateException]
+     * ("beginBroadcast() called while already in a broadcast") if two threads
+     * overlap. All beginBroadcast…finishBroadcast sections share [broadcastLock].
+     */
+    private inline fun forEachCallback(action: (IBmsCallback) -> Unit) {
+        synchronized(broadcastLock) {
+            val count = callbacks.beginBroadcast()
+            try {
+                for (i in 0 until count) {
+                    try {
+                        action(callbacks.getBroadcastItem(i))
+                    } catch (e: Exception) {
+                        Log.w(TAG, "AidlBatteryServiceAdapter: callback failed", e)
+                    }
                 }
+            } finally {
+                callbacks.finishBroadcast()
             }
-        } finally {
-            callbacks.finishBroadcast()
         }
     }
 }
