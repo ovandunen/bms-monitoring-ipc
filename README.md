@@ -1,57 +1,97 @@
 # bms-monitoring-ipc
 
-Standalone Android library (AAR) that defines the shared domain model, application ports, and AIDL-based IPC contracts between the **BMS monitoring service** (`com.fleet.bms`) and the **EcoCar GUI** client. No UI — only contracts and adapters.
+Standalone Android library (AAR) that defines the shared domain model, application ports, and AIDL-based IPC contracts between the **BMS monitoring service** (`applicationId` `ch.ecocarsolaire.bms`) and the **EcoCar GUI** client. No UI — only contracts and adapters.
+
+This library is **Family A** (`com.fleet.shared.bms.ipc`). EcoCar also contains a separate Family B AIDL under `com.bms.monitor.aidl` (not this artifact).
+
+## Version and JDK
+
+- **Group:** `com.fleet.shared`
+- **Artifact:** `bms-monitoring-ipc`
+- **Version:** `1.2.0-SNAPSHOT` (`build.gradle.kts` `version` and Maven publication)
+
+Gradle wrapper **9.3.1**. `jvmToolchain(17)`; `compileOptions` Java **17**. `gradle.properties` sets `org.gradle.java.home` to a Temurin 21 install path (Gradle daemon), not the compile target.
+
+Both apps consume this project as a **composite build**:
+
+- `includeBuild("../bms-monitoring-ipc")` — `bms-monitoring-app/settings.gradle.kts:24`
+- `implementation("com.fleet.shared:bms-monitoring-ipc:1.2.0-SNAPSHOT")` — `bms-monitoring-app/app/build.gradle.kts:164`
+- `includeBuild("../bms-monitoring-ipc")` — `bms-monitoring-car-gui/settings.gradle.kts:27`
+- `implementation("com.fleet.shared:bms-monitoring-ipc:1.2.0-SNAPSHOT")` — `bms-monitoring-car-gui/composeApp/build.gradle.kts:44`
+
+That `1.2.0-SNAPSHOT` string matches this library’s `version`. Gradle substitutes the included project; `mavenLocal()` is still listed in EcoCar `dependencyResolutionManagement.repositories`.
 
 ## Publish to Maven Local
 
-Requires Android SDK. Use Gradle **8.14.4+** (included in the wrapper) so the build runs on JDK 25; compile target remains Java 17.
+The `maven-publish` plugin is applied. Task:
 
 ```bash
 ./gradlew publishToMavenLocal
 ```
 
-Artifact coordinates:
-
-- **Group:** `com.fleet.shared`
-- **Artifact:** `bms-monitoring-ipc`
-- **Version:** `1.0.0-SNAPSHOT`
-
 Installed path:
 
-`~/.m2/repository/com/fleet/shared/bms-monitoring-ipc/1.0.0-SNAPSHOT/`
+`~/.m2/repository/com/fleet/shared/bms-monitoring-ipc/1.2.0-SNAPSHOT/`
 
-## Consume from APK projects
+Use this only if you are not using `includeBuild` (for example an out-of-tree consumer).
 
-In the consuming app’s `settings.gradle.kts` (or root `build.gradle.kts`):
+## Consume from APK projects (composite build, primary)
 
-```kotlin
-repositories {
-    mavenLocal()
-    google()
-    mavenCentral()
-}
-```
-
-Dependency:
+In the consuming app’s `settings.gradle.kts`:
 
 ```kotlin
-implementation("com.fleet.shared:bms-monitoring-ipc:1.0.0-SNAPSHOT")
+includeBuild("../bms-monitoring-ipc")
 ```
+
+Dependency (same version as this library):
+
+```kotlin
+implementation("com.fleet.shared:bms-monitoring-ipc:1.2.0-SNAPSHOT")
+```
+
+Optional `mavenLocal()` remains valid if you published the AAR and are not using `includeBuild`.
 
 ## AIDL contract (stable IPC surface)
 
-These files are the cross-process API; keep them backward compatible when possible:
+Files under `src/main/aidl/com/fleet/shared/bms/ipc/`:
 
 | File | Role |
 |------|------|
-| `IBmsService.aidl` | Server: snapshot query, callback registration, command ingress |
-| `IBmsCallback.aidl` | Client callbacks: state + connection status |
+| `IBmsService.aidl` | Server methods (order below) |
+| `IBmsCallback.aidl` | `onStateChanged`, `onConnectionStatusChanged`, `onLocationChanged` |
 | `ParcelableBatterySnapshot.aidl` | Parcelable declaration for telemetry DTO |
 | `ParcelableBmsCommand.aidl` | Parcelable declaration for commands |
+| `ParcelableVehicleLocation.aidl` | Parcelable declaration for GPS DTO |
+| `ParcelableTripSession.aidl` | Parcelable declaration for trip rows |
 
-Kotlin `@Parcelize` implementations live beside the AIDL package (`com.fleet.shared.bms.ipc`). Extend `ParcelableBatterySnapshot` fields with defaults before changing AIDL when adding telemetry.
+`IBmsService` methods in declaration order:
 
-**Service binding (client):** action `com.fleet.bms.action.MONITOR_SERVICE`, package `com.fleet.bms` — see `AidlBatteryClientAdapter`.
+1. `getCurrentSnapshot`
+2. `registerCallback`
+3. `unregisterCallback`
+4. `sendCommand`
+5. `getCurrentLocation`
+6. `resetTrip`
+7. `getTripSessions`
+8. `getIpcVersion`
+
+Kotlin `@Parcelize` implementations live beside the AIDL package (`ParcelableBatterySnapshot` in `infrastructure/`, `ParcelableTripSession` / `ParcelableVehicleLocation` next to AIDL). Extend `ParcelableBatterySnapshot` by **appending** fields with defaults; do not reorder existing fields.
+
+**Service binding (client `AidlBatteryClientAdapter`):** action `ch.ecocarsolaire.bms.action.DASHBOARD_SERVICE`, package `ch.ecocarsolaire.bms`. That matches BMS `BmsDashboardService` in `bms-monitoring-app` (`AndroidManifest.xml`).
+
+## Compatibility rules
+
+- `IpcContract.IPC_VERSION` is **2** (`src/main/kotlin/com/fleet/shared/bms/ipc/IpcContract.kt`). The client compares `remote.ipcVersion` to that constant; on mismatch it sets `ConnectionStatus.Error(IpcContract.VERSION_MISMATCH_REASON)` (`"IPC_VERSION_MISMATCH"`).
+- Current `ParcelableBatterySnapshot` / domain `BatterySnapshot` field order: `timestamp`, `stateOfChargePercent`, `totalVoltage`, `current`, `cellVoltageMax`, `cellVoltageMin`, `batteryTempMax`, `batteryTempMin`, `controllerTemp`, `motorTemp`, `motorRpm`, `vehicleSpeed`, `faultCodes`, `estimatedRangeKm`, `tripDistanceKm`, `co2SavingKg`, `batteryTempAvg`, `vehicleStatus`, `batteryDataStale`, `cloudConnected`.
+- Bump `IPC_VERSION` when the Parcel layout or AIDL method set changes. Build BMS and EcoCar from the **same** library version (`includeBuild` or the same published AAR).
+
+## Types added after 1.0.0
+
+- `TripSession` / `ParcelableTripSession` / `TripSessionMapper` — trip history over AIDL
+- `VehicleStatus` (STANDBY 0, DRIVING 1, CHARGING 2 – reserved, not produced by the BMS app yet) and snapshot `vehicleStatus`
+- `batteryDataStale` / `cloudConnected` on the snapshot
+- `ParcelableVehicleLocation` + `getCurrentLocation` / `onLocationChanged`
+- `getIpcVersion` / `IPC_VERSION`
 
 ## DDD layer boundaries
 
