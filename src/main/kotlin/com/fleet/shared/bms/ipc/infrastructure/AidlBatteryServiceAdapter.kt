@@ -12,6 +12,7 @@ import com.fleet.shared.bms.ipc.ParcelableTripSession
 import com.fleet.shared.bms.ipc.ParcelableVehicleLocation
 import com.fleet.shared.bms.ipc.domain.TripSession
 import com.fleet.shared.bms.ipc.application.ports.BatteryTelemetryPort
+import com.fleet.shared.bms.ipc.application.ports.LocationTelemetryPort
 import com.fleet.shared.bms.ipc.domain.BatterySnapshot
 import com.fleet.shared.bms.ipc.domain.BmsCommand
 import com.fleet.shared.bms.ipc.domain.ConnectionStatus
@@ -24,12 +25,13 @@ import kotlin.Float
  * Server-side IPC adapter.
  *
  *  - Single Responsibility: [IBmsService.Stub] IPC threading and callback fan-out only.
- *  - Interface Segregation: implements [BatteryTelemetryPort] (write + command ingress).
+ *  - Interface Segregation: implements [BatteryTelemetryPort] (write + command ingress)
+ *    and [LocationTelemetryPort] (location write).
  *  - Dependency Inversion: depends on application port contract, maps to domain at boundaries.
  *
  * Liskov: consumers bind to [IBmsService]; this type is the canonical server implementation.
  */
-class AidlBatteryServiceAdapter : IBmsService.Stub(), BatteryTelemetryPort {
+class AidlBatteryServiceAdapter : IBmsService.Stub(), BatteryTelemetryPort, LocationTelemetryPort {
 
     /** Return from [android.app.Service.onBind] - this stub is the [IBmsService] binder.  */
     val binder: IBinder get() = this
@@ -57,7 +59,7 @@ class AidlBatteryServiceAdapter : IBmsService.Stub(), BatteryTelemetryPort {
     }
 
     /** Publishes the latest resolved vehicle location per the USB GPS > Traccar > Android system priority policy. */
-    fun publishLocation(location: VehicleLocation) {
+    override fun publishLocation(location: VehicleLocation) {
         latestLocation = location
         val parcelable = VehicleLocationMapper.toParcelable(location)
         broadcastLocation(parcelable)

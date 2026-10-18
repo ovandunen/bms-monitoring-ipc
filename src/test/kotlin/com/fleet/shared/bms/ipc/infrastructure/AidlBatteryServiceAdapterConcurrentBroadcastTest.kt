@@ -4,6 +4,7 @@ import android.os.RemoteException
 import com.fleet.shared.bms.ipc.IBmsCallback
 import com.fleet.shared.bms.ipc.ParcelableBatterySnapshot
 import com.fleet.shared.bms.ipc.ParcelableVehicleLocation
+import com.fleet.shared.bms.ipc.application.ports.LocationTelemetryPort
 import com.fleet.shared.bms.ipc.domain.BatterySnapshot
 import com.fleet.shared.bms.ipc.domain.LocationSource
 import com.fleet.shared.bms.ipc.domain.VehicleLocation
@@ -21,6 +22,12 @@ import java.util.concurrent.atomic.AtomicInteger
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE, sdk = [28])
 class AidlBatteryServiceAdapterConcurrentBroadcastTest {
+
+    @Test
+    fun serviceAdapter_implementsLocationTelemetryPort() {
+        val port: LocationTelemetryPort = AidlBatteryServiceAdapter()
+        port.publishLocation(sampleLocation())
+    }
 
     @Test
     fun concurrentPublishStateAndLocation_doNotThrow_andDeliverAllCalls() = runBlocking {
